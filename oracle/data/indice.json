@@ -1,17 +1,17 @@
 {
-    "gerado_em":  "2026-10-09T16:23:45Z",
+    "gerado_em":  "2026-10-09T22:16:18Z",
     "arquivos":  {
-                     "BR":  "4cab1d39852739bd9c91131d7141381b158a11ecbca734549d332a7f2574e97c",
-                     "canais_BR":  "877cb8fe29a9619530212e1c6cd8af0eaa94a7ef9ca32ca87ae0173f2f6a2c9b",
-                     "virais_BR":  "6354d9477982e627f323c07662be8fd8a2a481c863fd72a5ee0ccd617b109bfc",
-                     "US":  "e0b1f7140aba92ab5aa98a5aa1598ba42ef8aca83f1ac6bf2b8b199b5613d8a2",
-                     "canais_US":  "7ea5c3ba847cbcc5373349744c1105a1c7c512254b9c43e07ef560718ae48809",
-                     "virais_US":  "0744af754383a024ba5ab802243bf5fbe630d03840972a0a33ec353f5d87862f",
-                     "MX":  "a87dd1c8fa404f1627f6fc717933bc9628bf527c4ecaa4d3b62e67a238e1a37d",
-                     "canais_MX":  "0bf676ba4382a4675360e8e2206076cf6fe4640da6ae52ef070b8546fee999dd",
-                     "virais_MX":  "66da579fd0b82a8068ba77e97f2d82bda34fcfba6f30892e639b9f2ea62c9a38",
-                     "DE":  "d09fad57deac9bd0d275d77cbd211cefdeb74effcf8679e886dac7bab66a439b",
-                     "canais_DE":  "65455d8ce02678ab7b6de777f10317500e171342eb888d8f3ee563532b7c22ba",
-                     "virais_DE":  "3522fe75fd01511d5003a4cd012df3717288c57e1b5754bb8e9477c657654089"
+                     "BR":  "b2f43a5d68390b246e6660a142c38696c815b4802661f79070802cd6202d1df9",
+                     "canais_BR":  "e597edccb90210244c9f858beafe3d67a3de3e71692b675f327777f5a0863935",
+                     "virais_BR":  "877b6cef50da5b11253305aa03965d70401f2b0dfe2dcac7f5e8773530aa66a4",
+                     "US":  "fbf10d1c70027ddc55cc72ca16392e91b7673efff860a3f57e1c70e8c73a633c",
+                     "canais_US":  "f770c119ca7a1b183c6d4248f43ac686bcadd6db0870da1e141491898de13843",
+                     "virais_US":  "1fb13ccf158e0da982ba5329fc431fb3e34407dffb9bb371890830e7d5c977e5",
+                     "MX":  "2fac4ec7cc2be19615da9a74e7e2e748941e4ec132108567592a433409c54db0",
+                     "canais_MX":  "4763b4283fc7638d982f5337da25f7f86323704aae6155c8ce4a2d41ff5589f1",
+                     "virais_MX":  "13e965e29ac9b5bf10422ce49dae5d9f9a85eb8ff1ae9ad4a27e38057b9de3c4",
+                     "DE":  "5410bb20705a59507d5905a7d2c0e43a49ca1e24fbc7d6df9880df9172e4d09c",
+                     "canais_DE":  "c8c816df7fb504f4b47d73132d25328b523f680496f87837be0ca9a8bc673cd0",
+                     "virais_DE":  "7c54c7da87b8e022a46a0b5ed2155f1d7f459f89994b23957d5c80874996cc47"
                  }
 }
