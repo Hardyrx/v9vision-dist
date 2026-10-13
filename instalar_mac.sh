@@ -95,8 +95,19 @@ else
     parar "A pasta $DESTINO ja existe e nao e' deste programa. Renomeie essa pasta e rode de novo."
   fi
   echo "      Baixando (pode levar alguns minutos)..."
-  curl -fsSL "$DIST_URL/$ARQ" -o "$TMP/$ARQ" || parar "Nao consegui baixar o programa. Confira a internet."
-  [ "$(shasum -a 256 "$TMP/$ARQ" | cut -d' ' -f1)" = "$SHA" ] || parar "O arquivo baixado esta corrompido. Rode de novo."
+  # Logo depois de uma publicacao o GitHub entrega por uns minutos o indice (latest.json) e o pacote de versoes
+  # diferentes (cache) e a conferencia falha (visto 13/10). Espera e tenta de novo sozinho, sem assustar ninguem.
+  BATEU=0
+  for TENTATIVA in 1 2 3 4 5 6 7 8; do
+    curl -fsSL "$DIST_URL/$ARQ" -o "$TMP/$ARQ" || parar "Nao consegui baixar o programa. Confira a internet."
+    if [ "$(shasum -a 256 "$TMP/$ARQ" | cut -d' ' -f1)" = "$SHA" ]; then BATEU=1; break; fi
+    echo "      A versao nova acabou de ser publicada e ainda esta chegando. Esperando 1 minuto ($TENTATIVA/8)..."
+    sleep 60
+    curl -fsSL "$DIST_URL/latest.json" -o "$TMP/latest.json" || true
+    VERSAO="$("$VPY" -c 'import json,sys;print(json.load(open(sys.argv[1]))["versao"])' "$TMP/latest.json")"
+    SHA="$("$VPY" -c 'import json,sys;print(json.load(open(sys.argv[1]))["sha256"].lower())' "$TMP/latest.json")"
+  done
+  [ $BATEU = 1 ] || parar "O arquivo baixado nao confere. Espere uns minutos e rode de novo."
   mkdir -p "$DESTINO"
   printf '%s\n' "$CHAVE" | "$VPY" "$TMP/v9_cofre.py" decifrar --pacote "$TMP/$ARQ" --destino "$DESTINO" >/dev/null
   case $? in 0) ;; 4) parar "O seu acesso foi removido ou a chave foi trocada. Fale com o administrador." ;; *) parar "Nao consegui abrir o pacote do programa." ;; esac
