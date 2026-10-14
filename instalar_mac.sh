@@ -53,9 +53,15 @@ ok "Python 3.12 pronto."
 
 # ---------- 2) termo e login de membro ----------
 azul 2 "Login: este programa e' so' para membros"
+# 13/10 (Mac da Roberta): este passo ficava mudo por um bom tempo e parecia travado. Agora diz o que esta' fazendo,
+# usa o "uv pip" (bem mais rapido que o pip) e tem limite de tempo.
+echo "      Preparando a verificacao de acesso (uns segundos)..."
 uv venv --python 3.12 --seed "$TMP/venv" >/dev/null 2>&1 || parar "Nao consegui preparar a verificacao de acesso."
 VPY="$TMP/venv/bin/python"
-"$VPY" -m pip install -q --disable-pip-version-check cryptography >/dev/null 2>&1 || parar "Nao consegui preparar a verificacao de acesso. Confira a internet."
+UV_HTTP_TIMEOUT=60 uv pip install -q --python "$VPY" cryptography >/dev/null 2>&1 \
+  || "$VPY" -m pip install -q --disable-pip-version-check --timeout 30 --retries 2 cryptography >/dev/null 2>&1 \
+  || parar "Nao consegui preparar a verificacao de acesso. Confira a internet."
+echo "      Buscando a lista de membros..."
 curl -fsSL "$DIST_URL/v9_cofre.py" -o "$TMP/v9_cofre.py" || parar "Nao consegui baixar o verificador de acesso. Confira a internet."
 curl -fsSL "$DIST_URL/membros.json" -o "$TMP/membros.json" || parar "Nao consegui buscar a lista de membros. Avise o administrador se a internet estiver normal."
 echo ""
