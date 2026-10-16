@@ -261,6 +261,16 @@ if [ -n "$SENHA_FLOW" ] && curl -fsSL "$FLOW_URL/membros.json" -o "$TMP/flow_mem
 fi
 SENHA_FLOW=""
 
+# ---------- opcional: motor Harness (DeepSeek) para o texto mecanico ----------
+# Desligado por padrao (Enter = N): ~453 MB e precisa do Node.js. Nunca vai no pacote do programa. Mesmo instalado, fica
+# desligado ate o dono ligar em Configuracoes > Motores de IA.
+R="$(pergunta '      (Opcional) Instalar o motor Harness (DeepSeek)? ~453 MB, precisa do Node.js. (S/N, Enter = N): ')"
+if [ "$R" = "s" ] || [ "$R" = "S" ]; then
+  if ! "$AppPy" "$DESTINO/scripts/dsh_runtime.py" instalar; then
+    aviso "O motor Harness nao foi instalado (sem Node.js: brew install node, ou https://nodejs.org). Nao afeta o programa; da para instalar depois em Configuracoes."
+  fi
+fi
+
 # ---------- 9) resumo ----------
 azul 9 "Resumo"
 printf 'Termo de uso aceito\nlogin: %s\ndata: %s\ncomputador: %s\nversao do app: %s\nmemoria: %s GB\n' "$LOGIN" "$(date '+%Y-%m-%d %H:%M:%S')" \
