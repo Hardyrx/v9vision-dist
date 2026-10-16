@@ -52,7 +52,7 @@ uv python install 3.12 >/dev/null 2>&1 || parar "Nao consegui baixar o Python 3.
 ok "Python 3.12 pronto."
 
 # ---------- 2) termo e login de membro ----------
-azul 2 "Login: este programa e' so' para membros"
+azul 2 "Acesso: este programa e' so' para membros"
 # 13/10 (Mac da Roberta): este passo ficava mudo por um bom tempo e parecia travado. Agora diz o que esta' fazendo,
 # usa o "uv pip" (bem mais rapido que o pip) e tem limite de tempo.
 echo "      Preparando a verificacao de acesso (uns segundos)..."
@@ -63,7 +63,6 @@ UV_HTTP_TIMEOUT=60 uv pip install -q --python "$VPY" cryptography >/dev/null 2>&
   || parar "Nao consegui preparar a verificacao de acesso. Confira a internet."
 echo "      Buscando a lista de membros..."
 curl -fsSL "$DIST_URL/v9_cofre.py" -o "$TMP/v9_cofre.py" || parar "Nao consegui baixar o verificador de acesso. Confira a internet."
-curl -fsSL "$DIST_URL/membros.json" -o "$TMP/membros.json" || parar "Nao consegui buscar a lista de membros. Avise o administrador se a internet estiver normal."
 echo ""
 echo "      TERMO DE USO (resumo)"
 echo "      - O acesso e' pessoal: um login por pessoa, sem emprestar nem dividir."
@@ -74,8 +73,42 @@ echo "      - O administrador pode remover o acesso em caso de uso indevido."
 echo ""
 ACEITE="$(pergunta '      Para aceitar, digite ACEITO e aperte Enter: ')"
 [ "$(echo "$ACEITE" | tr '[:lower:]' '[:upper:]' | xargs)" = "ACEITO" ] || parar "O termo de uso nao foi aceito; instalacao cancelada."
-CHAVE=""; LOGIN=""; SENHA_FLOW=""
+CHAVE=""; LOGIN=""; SENHA_FLOW=""; MODO="login"
+# ---- ACESSO POR CODIGO (16/10): sem login nem senha. Mostra o codigo DESTE Mac (o mesmo do app), o suporte libera no
+# painel e o servidor entrega a chave que abre o pacote. Login e senha continuam como alternativa (tecla L).
+campo() { printf '%s' "$J" | "$VPY" -c 'import json,sys;print(json.load(sys.stdin).get(sys.argv[1]) or "")' "$1" 2>/dev/null; }
+AVISOU=0; ESPERAS=0
+while [ "${V9_SO_LOGIN:-}" != "1" ]; do
+  J="$("$VPY" "$TMP/v9_cofre.py" codigo --app vision 2>/dev/null | tail -1)"
+  ESTADO="$(campo estado)"; [ -n "$ESTADO" ] || ESTADO="funcao_antiga"
+  CODIGO="$(campo codigo)"; LS="$(campo login_senha)"
+  case "$ESTADO" in
+    liberado) CHAVE="$(campo chave | tr -d '[:space:]')"; MODO="codigo"; LOGIN="Mac $CODIGO"; ok "este Mac esta liberado (codigo $CODIGO)."; break ;;
+    negado) parar "Este Mac (codigo $CODIGO) nao tem acesso ao V9 Vision. Fale com o administrador." ;;
+    sem_chave) parar "Este Mac (codigo $CODIGO) esta liberado, mas sem direito a instalar. Fale com o administrador." ;;
+    sem_rede) echo "      Nao consegui falar com o servidor de licencas. Confira a internet."; break ;;
+    aguardando) ;;
+    *) break ;;
+  esac
+  if [ "$AVISOU" = 0 ]; then
+    AVISOU=1
+    echo ""
+    echo "      Codigo deste Mac:  $CODIGO"
+    echo "      Mande este codigo para o suporte e espere. Confiro a cada 20 segundos se ja foi liberado."
+    [ "$LS" = "True" ] && echo "      (Se voce tem login e senha, aperte a tecla L para entrar com eles.)"
+  fi
+  ESPERAS=$((ESPERAS+1))
+  if [ -n "${V9_CODIGO_TENTATIVAS:-}" ] && [ "$ESPERAS" -gt "$V9_CODIGO_TENTATIVAS" ]; then parar "Modo de teste: o Mac nao foi liberado."; fi
+  K=""; read -r -s -n 1 -t "${V9_CODIGO_INTERVALO:-20}" K < /dev/tty 2>/dev/null
+  if [ "$LS" = "True" ] && { [ "$K" = "l" ] || [ "$K" = "L" ]; }; then break; fi
+  echo "      ...ainda nao liberado, conferindo de novo."
+done
+
+if [ "$MODO" = "login" ]; then
+  curl -fsSL "$DIST_URL/membros.json" -o "$TMP/membros.json" || parar "Nao consegui buscar a lista de membros. Avise o administrador se a internet estiver normal."
+fi
 for t in 1 2 3; do
+  [ "$MODO" = "login" ] || break
   [ "$t" -gt 1 ] && echo "      Login ou senha incorretos. Tente de novo."
   LOGIN="$(pergunta '      Login (o que o administrador cadastrou para voce): ')"
   SENHA="$(segredo '      Senha: ')"
@@ -85,7 +118,7 @@ for t in 1 2 3; do
 done
 SENHA=""
 [ -n "$CHAVE" ] || parar "Login ou senha incorretos 3 vezes. Fale com o administrador para cadastrar ou redefinir o seu acesso."
-ok "acesso liberado para $LOGIN."
+[ "$MODO" = "login" ] && ok "acesso liberado para $LOGIN."
 
 # ---------- 3) programa ----------
 azul 3 "Baixando o programa para $DESTINO"
@@ -249,7 +282,14 @@ ok "\"$NOME\" em Aplicativos do usuario (~/Applications) -- aparece no Launchpad
 printf '%s\n' "$LOGIN" > "$DESTINO/instalado_para.txt"
 
 # V9 Flow (quem comprou): mesmo login; o instalador do Flow para Mac roda aqui mesmo
-if [ -n "$SENHA_FLOW" ] && curl -fsSL "$FLOW_URL/membros.json" -o "$TMP/flow_membros.json" 2>/dev/null; then
+if [ "$MODO" = "codigo" ]; then
+  # por codigo o Flow tambem vem pela liberacao do PC (o servidor decide; Joshua barrado la): o instalador dele pede o mesmo codigo
+  if [ -d "$HOME/Applications/V9 Flow.app" ]; then ok "V9 Flow ja instalado (ele se atualiza sozinho)."
+  else
+    echo "      Se o suporte liberou o V9 Flow para este Mac, para instalar, depois deste, cole no Terminal:"
+    echo "        curl -fsSL $FLOW_URL/instalar_mac.sh | bash"
+  fi
+elif [ -n "$SENHA_FLOW" ] && curl -fsSL "$FLOW_URL/membros.json" -o "$TMP/flow_membros.json" 2>/dev/null; then
   ID_LOGIN="$(printf '%s' "$LOGIN" | tr '[:upper:]' '[:lower:]' | xargs | tr -d '\n' | shasum -a 256 | cut -d' ' -f1)"
   if "$VPY" -c 'import json,sys; sys.exit(0 if sys.argv[2] in json.load(open(sys.argv[1]))["membros"] else 1)' "$TMP/flow_membros.json" "$ID_LOGIN"; then
     if [ -d "$HOME/Applications/V9 Flow.app" ]; then ok "V9 Flow ja instalado (ele se atualiza sozinho)."

@@ -426,6 +426,93 @@ def cmd_publicar(a):
     return 0
 
 
+# ---------------------------------------------------------------- instalar do zero POR CODIGO (16/10, sem login/senha)
+# Mesmo algoritmo do app (licenca.maquina_id / licenca.codigo): o instalador mostra o codigo desta maquina, pergunta ao
+# servidor de licencas (acao "codigo") e, quando o dono liberou o PC no painel, recebe dele a chave que abre o pacote.
+URL_LICENCA = "https://hrvrhaxllsbgiwkliuoc.supabase.co/functions/v1/licenca"
+
+
+def _guid_maquina():
+    import subprocess
+    try:
+        if sys.platform == "win32":
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography", 0,
+                                winreg.KEY_READ | winreg.KEY_WOW64_64KEY) as k:
+                return winreg.QueryValueEx(k, "MachineGuid")[0]
+        if sys.platform == "darwin":
+            for cmd in (["/usr/sbin/ioreg", "-rd1", "-c", "IOPlatformExpertDevice"], ["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"]):
+                try:
+                    r = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+                except (OSError, subprocess.SubprocessError):
+                    continue
+                m = re.search(r'"IOPlatformUUID"\s*=\s*"([^"]+)"', r.stdout or "")
+                if m:
+                    return m.group(1)
+            r = subprocess.run(["/usr/sbin/sysctl", "-n", "kern.uuid"], capture_output=True, text=True, timeout=10)
+            return r.stdout.strip()
+    except Exception:
+        pass
+    return ""
+
+
+def maquina_id() -> str:
+    if os.environ.get("V9_MAQUINA"):
+        return hashlib.sha256(os.environ["V9_MAQUINA"].encode()).hexdigest()
+    guid = _guid_maquina()
+    if not guid:
+        import uuid
+        guid = str(uuid.getnode())
+    return hashlib.sha256(("v9|" + guid).encode()).hexdigest()
+
+
+def codigo_maquina() -> str:
+    h = maquina_id().upper()
+    return "-".join(h[i:i + 4] for i in range(0, 12, 4))
+
+
+def consulta_codigo(app: str, url: str, timeout: int = 20) -> dict:
+    """-> {"estado", "codigo", "login_senha", "chave"?}. estado: liberado | aguardando | negado | sem_chave | sem_rede | funcao_antiga"""
+    import socket
+    import urllib.error
+    import urllib.request
+    base = {"codigo": codigo_maquina(), "login_senha": True}
+    corpo = json.dumps({"acao": "codigo", "maquina": maquina_id(), "app": app, "nome_pc": socket.gethostname()}).encode()
+    req = urllib.request.Request(url, data=corpo, headers={"content-type": "application/json"}, method="POST")
+    try:
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                texto = r.read().decode("utf-8", "replace")
+        except urllib.error.HTTPError as e:                  # o servidor responde 403 com JSON para "aguardando" etc.
+            texto = e.read().decode("utf-8", "replace")
+    except (urllib.error.URLError, OSError, ValueError):
+        return {**base, "estado": "sem_rede"}
+    try:
+        j = json.loads(texto)
+    except ValueError:
+        return {**base, "estado": "funcao_antiga"}
+    if not isinstance(j, dict):
+        return {**base, "estado": "funcao_antiga"}
+    base["login_senha"] = j.get("login_senha", True) is not False
+    if j.get("ok") and j.get("licenca"):
+        chave = j.get("chave_dados")
+        if not chave:                                      # liberado, mas sem direito as versoes/pacote (Atualizacao desligada)
+            return {**base, "estado": "sem_chave"}
+        return {**base, "estado": "liberado", "chave": chave}
+    m = j.get("motivo") or ""
+    if m == "aguardando_liberacao":
+        return {**base, "estado": "aguardando"}
+    if m in ("dispositivo_bloqueado", "proibido", "vencida", "bloqueado"):
+        return {**base, "estado": "negado", "motivo": m}
+    return {**base, "estado": "funcao_antiga"}             # "pedido_invalido" = a funcao antiga: segue o login/senha
+
+
+def cmd_codigo(a):
+    r = consulta_codigo(a.app, a.url or os.environ.get("V9_LICENCA_URL") or URL_LICENCA)
+    print(json.dumps(r))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description="Cofre do instalador V9 Vision")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -438,6 +525,7 @@ def main():
     p.add_argument("--dados", help="pasta com os .enc do Oracle: confere se abrem com a chave antes de publicar")
     p.add_argument("--thumbs", help="pasta do banco de thumbnails (_thumbnails\\banco): publica cifrado em thumbs/")
     p.set_defaults(f=cmd_publicar)
+    p = sub.add_parser("codigo"); p.add_argument("--app", default="vision"); p.add_argument("--url"); p.set_defaults(f=cmd_codigo)
     p = sub.add_parser("guardar"); p.add_argument("--destino", required=True); p.set_defaults(f=cmd_guardar)
     a = ap.parse_args()
     return a.f(a)
