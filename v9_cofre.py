@@ -316,7 +316,7 @@ def _metodo_fora_do_pacote(app, zip_bytes):
                 n += 1
             elif (nome.endswith(".py") and not nome.endswith("conteudo.py")
                   and (nome.count("/") <= 1 or nome.startswith("motor_flow/v9flow/"))):
-                fonte = dados.decode("utf-8")
+                fonte = dados.decode("utf-8-sig")         # 17/10: arquivo salvo com BOM travou a publicacao
                 novo = P.tirar_reservas(fonte)
                 if novo != fonte:
                     n += fonte.count("conteudo.texto(") + fonte.count("conteudo.dados(")
@@ -479,18 +479,21 @@ def consulta_codigo(app: str, url: str, timeout: int = 20) -> dict:
     base = {"codigo": codigo_maquina(), "login_senha": True}
     corpo = json.dumps({"acao": "codigo", "maquina": maquina_id(), "app": app, "nome_pc": socket.gethostname()}).encode()
     req = urllib.request.Request(url, data=corpo, headers={"content-type": "application/json"}, method="POST")
+    erro_http = None
     try:
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 texto = r.read().decode("utf-8", "replace")
         except urllib.error.HTTPError as e:                  # o servidor responde 403 com JSON para "aguardando" etc.
+            erro_http = e.code
             texto = e.read().decode("utf-8", "replace")
     except (urllib.error.URLError, OSError, ValueError):
         return {**base, "estado": "sem_rede"}
     try:
         j = json.loads(texto)
     except ValueError:
-        return {**base, "estado": "funcao_antiga"}
+        # 16/10: erro HTTP sem JSON (proxy/antivirus/servidor fora: 502, 504, pagina de erro) e' rede, nao a funcao antiga
+        return {**base, "estado": "sem_rede" if erro_http else "funcao_antiga"}
     if not isinstance(j, dict):
         return {**base, "estado": "funcao_antiga"}
     base["login_senha"] = j.get("login_senha", True) is not False
