@@ -264,6 +264,19 @@ if [ -d "/Applications/CapCut.app" ] || [ -d "$HOME/Applications/CapCut.app" ]; 
 else aviso "Nao achei o CapCut. Instale pela App Store ou em capcut.com e abra uma vez antes de gerar o primeiro video."; fi
 
 # ---------- 8) app no Launchpad + V9 Flow ----------
+
+# 18/10 (dono: "nenhum com o ícone"): no macOS novo o app do osacompile traz um Assets.car que manda no ícone; trocar só o
+# applet.icns não aparece. Apaga o Assets.car, aponta o Info.plist para o applet.icns, reassina e avisa o Launchpad.
+icone_no_app() {
+  local a="$1"
+  rm -f "$a/Contents/Resources/Assets.car"
+  /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$a/Contents/Info.plist" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile applet" "$a/Contents/Info.plist" >/dev/null 2>&1 \
+    || /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string applet" "$a/Contents/Info.plist" >/dev/null 2>&1 || true
+  codesign --force --sign - "$a" >/dev/null 2>&1 && codesign --verify "$a" >/dev/null 2>&1 || aviso "O app $(basename "$a") pode nao abrir: a assinatura falhou. Rode este instalador de novo."
+  touch "$a"
+  /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$a" >/dev/null 2>&1 || true
+}
 azul 8 "Criando o app \"$NOME\""
 # o app e' compilado pelo proprio Mac (osacompile): um .app feito a mao deu erro -10669 no M4 (Flow, 13/10)
 mkdir -p "$HOME/Applications"
@@ -276,6 +289,7 @@ if "$AppPy" -c 'import sys; from PIL import Image; Image.open(sys.argv[1]).conve
      "$DESTINO/static/icone.ico" "$TMP/icone-512.png" 2>/dev/null; then
   for s in 16 32 128 256 512; do sips -z $s $s "$TMP/icone-512.png" --out "$ICONSET/icon_${s}x${s}.png" >/dev/null 2>&1; done
   iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/applet.icns" >/dev/null 2>&1 || true
+  icone_no_app "$APP"
 fi
 touch "$APP"
 ok "\"$NOME\" em Aplicativos do usuario (~/Applications) -- aparece no Launchpad e no Spotlight."
