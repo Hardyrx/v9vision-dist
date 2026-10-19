@@ -285,7 +285,10 @@ osacompile -o "$APP" -e "do shell script \"cd '$DESTINO' && nohup '$DESTINO/venv
   || parar "Nao consegui criar o app no Mac (osacompile)."
 mkdir -p "$DESTINO/logs"
 ICONSET="$TMP/V9Vision.iconset"; mkdir -p "$ICONSET"
-if "$AppPy" -c 'import sys; from PIL import Image; Image.open(sys.argv[1]).convert("RGBA").resize((512, 512), Image.LANCZOS).save(sys.argv[2])' \
+if [ -f "$DESTINO/static/icone-mac.icns" ]; then   # 19/10: ícone colorido (fundo preto e verde), pronto
+  cp "$DESTINO/static/icone-mac.icns" "$APP/Contents/Resources/applet.icns"
+  icone_no_app "$APP"
+elif "$AppPy" -c 'import sys; from PIL import Image; Image.open(sys.argv[1]).convert("RGBA").resize((512, 512), Image.LANCZOS).save(sys.argv[2])' \
      "$DESTINO/static/icone.ico" "$TMP/icone-512.png" 2>/dev/null; then
   for s in 16 32 128 256 512; do sips -z $s $s "$TMP/icone-512.png" --out "$ICONSET/icon_${s}x${s}.png" >/dev/null 2>&1; done
   iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/applet.icns" >/dev/null 2>&1 || true
