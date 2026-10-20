@@ -162,7 +162,7 @@ fi
 
 # ---------- 4) ffmpeg, bibliotecas, Remotion ----------
 azul 4 "Preparando ffmpeg, bibliotecas e Remotion (a parte mais demorada)"
-[ -x "$DESTINO/venv/bin/python" ] || uv venv --python 3.12 --seed "$DESTINO/venv" >/dev/null 2>&1 || parar "Nao consegui criar o ambiente do programa."
+"$DESTINO/venv/bin/python" -c 'import sys; sys.exit(sys.version_info[:2] != (3, 12))' >/dev/null 2>&1 || uv venv --clear --python 3.12 --seed "$DESTINO/venv" >/dev/null 2>&1 || parar "Nao consegui criar o ambiente Python 3.12 do programa."
 AppPy="$DESTINO/venv/bin/python"
 /bin/bash "$DESTINO/preparar_mac.sh" || parar "O preparo do programa falhou. Veja a mensagem acima."
 [ -f "$DESTINO/remotion/node_modules/.chrome_ok" ] || aviso "O Remotion nao ficou pronto agora. O programa funciona; ele tenta de novo ao abrir."

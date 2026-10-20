@@ -403,10 +403,10 @@ def cmd_publicar(a):
     plataformas = plataformas_do_pacote(zip_bytes, getattr(a, "plataformas", None))
     print(f"Plataformas deste pacote: {', '.join(plataformas)}")
     # BLINDAGEM (2026-10-20): o pacote do aluno vai com o codigo Python em bytecode (.pyc sem fonte), nao mais em .py
-    # legivel. 20/10 (revisao Codex, 3 P1): DESLIGADA por padrao ate' sair a versao de TRANSICAO -- o atualizador
-    # antigo dos membros nao apaga o .py velho (o Python o preferiria), o do Mac exige plataforma.py e a limpeza
-    # rodava antes de conferir a copia. Liga so' com V9_BLINDAR=1, depois que a transicao estiver nos alunos.
-    if getattr(a, "sem_blindagem", False) or os.environ.get("V9_BLINDAR", "0") != "1":
+    # legivel. 20/10: LIGADA por padrao. Todo modulo vai com um stub .py minusculo (ofuscar._precisa_stub), entao o
+    # ATUALIZADOR ANTIGO dos membros, que so' copia por cima, troca cada .py com codigo pelo stub e o Mac antigo acha
+    # o plataforma.py -- nao precisa de versao de transicao. V9_BLINDAR=0 ou --sem-blindagem desliga (depuracao).
+    if getattr(a, "sem_blindagem", False) or os.environ.get("V9_BLINDAR", "1") == "0":   # 20/10: bytecode embutido no proprio .py (cada arquivo funciona sozinho) -> seguro ate com copia parcial do atualizador antigo
         print("AVISO: blindagem DESLIGADA -- o pacote leva o codigo .py legivel.", file=sys.stderr)
     else:
         import ofuscar
