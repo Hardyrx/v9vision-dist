@@ -398,8 +398,33 @@ def cmd_publicar(a):
             return 6
         print(f"Metodo fora do pacote: {n} prompt(s) e arquivo(s) de metodo so' na nuvem.")
     versao = a.versao or (time.strftime("%Y.%m.%d") + "-" + curto)
+    # as plataformas sao lidas ANTES da blindagem: a blindagem troca plataforma.py por plataforma.pyc (sourceless) e
+    # plataformas_do_pacote procura por plataforma.py.
     plataformas = plataformas_do_pacote(zip_bytes, getattr(a, "plataformas", None))
     print(f"Plataformas deste pacote: {', '.join(plataformas)}")
+    # BLINDAGEM (2026-10-20): o pacote do aluno vai com o codigo Python em bytecode (.pyc sem fonte), nao mais em .py
+    # legivel. 20/10 (revisao Codex, 3 P1): DESLIGADA por padrao ate' sair a versao de TRANSICAO -- o atualizador
+    # antigo dos membros nao apaga o .py velho (o Python o preferiria), o do Mac exige plataforma.py e a limpeza
+    # rodava antes de conferir a copia. Liga so' com V9_BLINDAR=1, depois que a transicao estiver nos alunos.
+    if getattr(a, "sem_blindagem", False) or os.environ.get("V9_BLINDAR", "0") != "1":
+        print("AVISO: blindagem DESLIGADA -- o pacote leva o codigo .py legivel.", file=sys.stderr)
+    else:
+        import ofuscar
+        try:
+            zip_bytes, relb = ofuscar.ofuscar_zip(zip_bytes)
+            falhas = ofuscar.auditar(zip_bytes)
+            if falhas:
+                raise RuntimeError("auditoria da blindagem reprovou: " + "; ".join(falhas[:5]))
+        except Exception as e:
+            print(f"ERRO: a blindagem falhou ({e}). Nada foi publicado.", file=sys.stderr)
+            return 7
+        print(f"Blindagem: {relb['compilados']} arquivo(s) em bytecode "
+              f"({relb['sourceless']} sourceless + {relb['stubs']} com stub), "
+              f"{relb['testes_removidos']} de teste fora do pacote.")
+        avisos = ofuscar.avisos_caminho_dev(zip_bytes)
+        if avisos:
+            print(f"AVISO: {len(avisos)} arquivo(s) ainda tem um caminho de desenvolvedor como constante "
+                  f"(limpe quando der): {', '.join(avisos[:4])}{'...' if len(avisos) > 4 else ''}", file=sys.stderr)
     blob = fecha(chave, zip_bytes)
     os.makedirs(a.dist, exist_ok=True)
     with open(os.path.join(a.dist, "app.v9pkg"), "wb") as f:
@@ -525,6 +550,8 @@ def main():
     p = sub.add_parser("publicar"); p.add_argument("--app", required=True); p.add_argument("--dist", required=True)
     p.add_argument("--membros", required=True); p.add_argument("--versao")
     p.add_argument("--plataformas", help="ex.: windows,mac (padrao: descobre pelo pacote)")
+    p.add_argument("--sem-blindagem", dest="sem_blindagem", action="store_true",
+                   help="publica com o codigo .py legivel (so' pra depuracao; o padrao blinda em bytecode)")
     p.add_argument("--dados", help="pasta com os .enc do Oracle: confere se abrem com a chave antes de publicar")
     p.add_argument("--thumbs", help="pasta do banco de thumbnails (_thumbnails\\banco): publica cifrado em thumbs/")
     p.set_defaults(f=cmd_publicar)
