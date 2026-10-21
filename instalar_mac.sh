@@ -298,25 +298,42 @@ touch "$APP"
 ok "\"$NOME\" em Aplicativos do usuario (~/Applications) -- aparece no Launchpad e no Spotlight."
 printf '%s\n' "$LOGIN" > "$DESTINO/instalado_para.txt"
 
-# V9 Flow (quem comprou): mesmo login; o instalador do Flow para Mac roda aqui mesmo
-if [ "$MODO" = "codigo" ]; then
-  # por codigo o Flow tambem vem pela liberacao do PC (o servidor decide; Joshua barrado la): o instalador dele pede o mesmo codigo
-  if [ -d "$HOME/Applications/V9 Flow.app" ]; then ok "V9 Flow ja instalado (ele se atualiza sozinho)."
-  else
-    echo "      Se o suporte liberou o V9 Flow para este Mac, para instalar, depois deste, cole no Terminal:"
-    echo "        curl -fsSL $FLOW_URL/instalar_mac.sh | bash"
-  fi
-elif [ -n "$SENHA_FLOW" ] && curl -fsSL "$FLOW_URL/membros.json" -o "$TMP/flow_membros.json" 2>/dev/null; then
-  ID_LOGIN="$(printf '%s' "$LOGIN" | tr '[:upper:]' '[:lower:]' | xargs | tr -d '\n' | shasum -a 256 | cut -d' ' -f1)"
+# V9 Flow (incluso no Vision): igual ao Passo 10 do instalar.tpl.bat -- baixa o instalador Mac do Flow e roda aqui mesmo,
+# encadeado (V9F_ENCADEADO + V9F_E_*): login, senha e termo vao daqui e ele nao pergunta de novo. A lista do Flow
+# (membros.json da distribuicao dele) continua sendo a palavra final. Nunca bloqueia: falhou = aviso + linha manual.
+LINHA_FLOW="curl -fsSL $FLOW_URL/instalar_mac.sh | bash"
+flow_encadeado() {
+  # $1 = modo (login|codigo). Codigos do instalador do Flow: 0 ok, 3 ainda nao liberado, outro = falhou
+  local cod
+  echo "      Instalando o V9 Flow neste Mac (mais alguns minutos)..."
+  V9F_ENCADEADO=1 V9F_E_modo="$1" V9F_E_termo=ACEITO V9F_BASE_URL="$FLOW_URL"     V9F_E_login="$LOGIN" V9F_E_senha="$SENHA_FLOW" /bin/bash "$TMP/Instalar-V9Flow.sh"
+  cod=$?
+  if [ $cod -eq 0 ]; then ok "V9 Flow instalado: app \"V9 Flow\" no Launchpad."
+  elif [ $cod -eq 3 ]; then ok "o V9 Flow ainda nao foi liberado para este Mac. Quando for, e so' rodar este instalador de novo."
+  else aviso "O V9 Flow nao terminou de instalar (veja a mensagem acima). Nao afeta o V9 Vision. Para tentar de novo, cole no Terminal: $LINHA_FLOW"; fi
+}
+if [ -d "$HOME/Applications/V9 Flow.app" ]; then ok "V9 Flow ja instalado (ele se atualiza sozinho)."
+elif [ "$MODO" != "codigo" ] && [ -z "$SENHA_FLOW" ]; then
+  aviso "Nao deu para instalar o V9 Flow agora. Para instalar, cole no Terminal: $LINHA_FLOW"
+elif ! curl -fsSL "$FLOW_URL/instalar_mac.sh" -o "$TMP/Instalar-V9Flow.sh" 2>/dev/null; then
+  aviso "Nao consegui baixar o instalador do V9 Flow agora. Para instalar depois, cole no Terminal: $LINHA_FLOW"
+elif [ "$MODO" = "codigo" ]; then
+  # por codigo, quem decide e' o servidor de licencas (o mesmo Mac liberado; Joshua barrado la): o instalador do Flow
+  # confere o mesmo codigo e, se ainda nao foi liberado, sai com 3 sem esperar
+  flow_encadeado codigo
+elif curl -fsSL "$FLOW_URL/membros.json" -o "$TMP/flow_membros.json" 2>/dev/null; then
+  ID_LOGIN="$(printf '%s' "$LOGIN" | tr '[:upper:]' '[:lower:]' | xargs | tr -d '
+' | shasum -a 256 | cut -d' ' -f1)"
   if "$VPY" -c 'import json,sys; sys.exit(0 if sys.argv[2] in json.load(open(sys.argv[1]))["membros"] else 1)' "$TMP/flow_membros.json" "$ID_LOGIN"; then
-    if [ -d "$HOME/Applications/V9 Flow.app" ]; then ok "V9 Flow ja instalado (ele se atualiza sozinho)."
-    else
-      echo "      Voce tem o V9 Flow: para instalar, depois deste, cole no Terminal:"
-      echo "        curl -fsSL $FLOW_URL/instalar_mac.sh | bash"
-    fi
+    flow_encadeado login
+  else
+    ok "o V9 Flow sera liberado para sua conta em breve. Quando for, e so' rodar este instalador de novo."
   fi
+else
+  aviso "Nao consegui conferir a lista do V9 Flow agora. Para instalar depois, cole no Terminal: $LINHA_FLOW"
 fi
 SENHA_FLOW=""
+
 
 # ---------- opcional: motor Harness (DeepSeek) para o texto mecanico ----------
 # Desligado por padrao (Enter = N): ~453 MB e precisa do Node.js. Nunca vai no pacote do programa. Mesmo instalado, fica
@@ -337,6 +354,7 @@ if [ ${#AVISOS[@]} -eq 0 ]; then ok "tudo certo, nenhuma pendencia."; else echo 
 echo ""
 echo "  Para usar: abra \"$NOME\" pelo Launchpad ou Spotlight (Cmd+Espaco, digite V9 Vision)."
 echo "  Para atualizar: o programa confere sozinho cada vez que abre (ou rode este comando de novo)."
+echo "  Para desinstalar: bash \"$DESTINO/desinstalar_mac.sh\""
 echo ""
 R="$(pergunta '  Abrir o programa agora? (S/N): ')"
 if [ "$R" = "s" ] || [ "$R" = "S" ]; then open "$APP"; fi
