@@ -183,7 +183,29 @@ PROVEDOR="claude"
 cd "$DESTINO" || parar "Nao consegui entrar na pasta do programa."
 if [ -f ".env" ]; then
   ok "ja existe uma configuracao (.env) -- mantida como esta."
-  PROVEDOR="$(grep -E '^\s*IA_PROVEDOR\s*=' .env | head -1 | cut -d= -f2 | tr -d '[:space:]')"; [ -n "$PROVEDOR" ] || PROVEDOR="claude"
+  PROVEDOR="$(grep -E '^\s*IA_PROVEDOR\s*=' .env | head -1 | cut -d= -f2 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"; [ -n "$PROVEDOR" ] || PROVEDOR="claude"
+  # 23/10 (auditoria): mostra a IA gravada e deixa trocar SO ela (o resto do .env fica como esta')
+  case $PROVEDOR in gemini) NOME_IA="Gemini" ;; gpt) NOME_IA="GPT" ;; *) NOME_IA="Claude" ;; esac
+  ok "inteligencia artificial gravada: $NOME_IA."
+  TROCA="$(pergunta "      Quer trocar a IA? 1 = Claude, 2 = Gemini, 3 = GPT (Enter = manter $NOME_IA): ")"
+  NOVA=""
+  case $TROCA in 1) NOVA="claude" ;; 2) NOVA="gemini" ;; 3) NOVA="gpt" ;; "") ;; *) aviso "Resposta '$TROCA' nao e 1, 2 nem 3: a IA continua $NOME_IA." ;; esac
+  if [ -n "$NOVA" ] && [ "$NOVA" != "$PROVEDOR" ]; then
+    CHAVE_NOME=""; CHAVE_NOVA=""
+    [ "$NOVA" = "gemini" ] && CHAVE_NOME="GEMINI_API_KEY" && CHAVE_NOVA="$(segredo '      Chave do Gemini (aistudio.google.com/apikey): ')"
+    [ "$NOVA" = "gpt" ] && CHAVE_NOME="OPENAI_API_KEY" && CHAVE_NOVA="$(segredo '      Chave da OpenAI (platform.openai.com/api-keys): ')"
+    if [ -n "$CHAVE_NOME" ] && [ -z "$CHAVE_NOVA" ] && ! grep -qE "^\s*$CHAVE_NOME\s*=\s*\S" .env; then
+      aviso "Sem a chave a IA continua $NOME_IA. Rode o instalador de novo com a chave."
+    else
+      grep -vE '^\s*IA_PROVEDOR\s*=' .env > .env.tmp
+      if [ -n "$CHAVE_NOVA" ]; then grep -vE "^\s*$CHAVE_NOME\s*=" .env.tmp > .env.tmp2; mv .env.tmp2 .env.tmp; echo "$CHAVE_NOME=$CHAVE_NOVA" >> .env.tmp; fi
+      echo "IA_PROVEDOR=$NOVA" >> .env.tmp
+      chmod 600 .env.tmp; mv .env.tmp .env
+      ok "inteligencia artificial trocada: $NOME_IA -> $NOVA."
+      PROVEDOR="$NOVA"
+    fi
+    CHAVE_NOVA=""
+  fi
 else
   echo "      Responda as perguntas. Onde diz \"Enter para pular\", pode deixar em branco e preencher depois."
   echo "      As chaves nao aparecem na tela enquanto voce digita."
