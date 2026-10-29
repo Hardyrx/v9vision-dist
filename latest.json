@@ -1,9 +1,9 @@
 {
- "versao": "2026.10.29-7200f92",
+ "versao": "2026.10.29-76435fb",
  "arquivo": "app.v9pkg",
- "sha256": "a25c6dc8620b45e8f8d19f7c8fcdf3b47376147438048dc1b6124d4e30c9701c",
- "tamanho": 37326123,
- "publicado_em": "2026-10-29 20:47:26",
+ "sha256": "7575d03ceeb3c26ec71f8b767f77582da3585c87d4d2b23baa4ba92615313f15",
+ "tamanho": 37364945,
+ "publicado_em": "2026-10-29 21:33:16",
  "chave_id": "36741a5a0b46",
  "plataformas": [
   "windows",
