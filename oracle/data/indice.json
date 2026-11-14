@@ -1,17 +1,17 @@
 {
-    "gerado_em":  "2026-11-11T13:16:05Z",
+    "gerado_em":  "2026-11-14T18:24:48Z",
     "arquivos":  {
-                     "BR":  "420174d061d820f07008ed609e5e099e6a170382465abc3d7d8297920644ec75",
-                     "canais_BR":  "1c710feab136991dbc81ad95879ee538bc9cdd083ebc8687aa975aae31ad11ec",
-                     "virais_BR":  "2453d7ab08fc993e2d619a557f074d646b6b3ebcbccf6b0fcfa0d86085fcfa63",
-                     "US":  "07d51edfda927ae1e7489d576ecdf168275d79c34d452a5dbac95ea04c720fe7",
-                     "canais_US":  "17cf7dabb65f96d9625daec3c3d93185a41044c7e39a9c73417813bd6237fc67",
-                     "virais_US":  "2555fd274cc3c6cc7d38db3ba54fec8781882d18108dd14208faf687064a3a73",
-                     "MX":  "808b744c04f8e1bb639f27a14b0898847cd702ba1af1b8bce1c713da0c8cd48e",
-                     "canais_MX":  "a3cf361003efda2fdccfd950c9a63ce3ff1dc707535ffce4d680cd452bab675c",
-                     "virais_MX":  "a0101bbbbf05494a9064e10db51703da6b74d991fa0a6ea1893c21b8c854cd14",
-                     "DE":  "1cd60666692a3600a67526d9fa6f3d9ba3ce2d6ab3c46684b4aca5dca3d6ad85",
-                     "canais_DE":  "80b6b717389bd5a745fb27b7545492fa9645c857ecbd117d3fc534d3a7f0c5ba",
-                     "virais_DE":  "ad85496e8e03310df33fe9550be8d3ff05d57901e87baa0513f1a5c693b5ba49"
+                     "BR":  "a3636b575fd51725bae269ba8866674dc47bad3a3cab56dc5b0b80a132c2ff00",
+                     "canais_BR":  "9692e77fe441aecb93e98a229eccc6ad4511429c484374957be9888a06856471",
+                     "virais_BR":  "c43d101c199b348c56801e0c95355368a41f818b08c1a176d64564ad61775d17",
+                     "US":  "16ada89d6b8f01a888cee15cca8d559920301c7afb9d7d57b0887e04b8dd3d22",
+                     "canais_US":  "99fc3a8f4aeda974b1c6fe1affd1f8b443a87db0e607584293a487dac381f242",
+                     "virais_US":  "b888daa49eed360d4e7484b160e800b88966edebd1f070d6e57a58ee834b3222",
+                     "MX":  "66a0fa966cfed64e23b57b53fed17ba2c4d14d3e14c7d39d731742b2a4ed8913",
+                     "canais_MX":  "33c715047436ee41470b89cabc88e455e2a799edc6fa322b6786a9f872a1e6a8",
+                     "virais_MX":  "a44ddae58e965e7381022bf9c47c5b3742f76d4a100465747d0a3be50572602b",
+                     "DE":  "dcf203307a4b3dd758cafc368af22a0e24bb4db498992338084a4fc8b24124ab",
+                     "canais_DE":  "7fde2f9b6641dfbdeb10dd153d3b38ea4a6bf59a15e43725a5c4b8ba983120eb",
+                     "virais_DE":  "6a762671d3260b9c9efeec36926b82cb98588e275a687cfa5c0e9ef75183ac54"
                  }
 }
