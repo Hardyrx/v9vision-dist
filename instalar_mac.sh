@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Instalador do V9 Vision para Mac (13/10/2026). Cola no Terminal:
+# Instalador do V9 Vision Prime para Mac (13/10/2026). Cola no Terminal:
 #
 #   curl -fsSL https://raw.githubusercontent.com/Hardyrx/v9vision-dist/main/instalar_mac.sh | bash
 #
@@ -16,6 +16,7 @@ DESTINO="${V9_DESTINO:-$HOME/V9Vision}"
 DADOS="$HOME/Library/Application Support/V9Vision"
 APP="$HOME/Applications/V9 Vision.app"
 NOME="V9 Vision"
+NOME_VISIVEL="V9 Vision Prime"   # 18/11: o nome que aparece (o arquivo continua "V9 Vision.app")
 TMP="$(mktemp -d -t v9visioninst)"
 AVISOS=()
 TOTAL=9
@@ -30,11 +31,11 @@ segredo()  { local r; read -r -s -p "$1" r < /dev/tty; echo > /dev/tty; printf '
 
 [ "$(uname)" = "Darwin" ] || parar "Este instalador e' para Mac. No Windows use o Instalar-V9Vision.bat."
 echo ""
-echo "  ===================  Instalador do V9 Vision (Mac)  ==================="
+echo "  ===================  Instalador do V9 Vision Prime (Mac)  ==================="
 MEM_GB=$(( $(sysctl -n hw.memsize) / 1073741824 ))
 LIVRE_GB=$(( $(df -k "$HOME" | tail -1 | awk '{print $4}') / 1048576 ))
 echo "      Este Mac: $(sysctl -n machdep.cpu.brand_string 2>/dev/null), ${MEM_GB} GB de memoria, ${LIVRE_GB} GB livres."
-[ "$(sw_vers -productVersion | cut -d. -f1)" -ge 12 ] 2>/dev/null || parar "O V9 Vision precisa do macOS 12 (Monterey) ou mais novo."
+[ "$(sw_vers -productVersion | cut -d. -f1)" -ge 12 ] 2>/dev/null || parar "O V9 Vision Prime precisa do macOS 12 (Monterey) ou mais novo."
 [ "$LIVRE_GB" -ge 8 ] || parar "Pouco espaco livre (${LIVRE_GB} GB). O programa ocupa cerca de 3 GB e cada video mais alguns GB. Libere espaco e rode de novo."
 [ "$LIVRE_GB" -ge 25 ] || aviso "So ${LIVRE_GB} GB livres: da para instalar, mas cada video ocupa alguns GB. Apague projetos antigos ou use um disco externo para os videos."
 [ "$MEM_GB" -ge 12 ] || echo "      Mac de ${MEM_GB} GB: o programa vai fazer uma coisa pesada por vez (o video sai igual, so' demora mais)."
@@ -84,7 +85,7 @@ while [ "${V9_SO_LOGIN:-}" != "1" ]; do
   CODIGO="$(campo codigo)"; LS="$(campo login_senha)"
   case "$ESTADO" in
     liberado) CHAVE="$(campo chave | tr -d '[:space:]')"; MODO="codigo"; LOGIN="Mac $CODIGO"; ok "este Mac esta liberado (codigo $CODIGO)."; break ;;
-    negado) parar "Este Mac (codigo $CODIGO) nao tem acesso ao V9 Vision. Fale com o administrador." ;;
+    negado) parar "Este Mac (codigo $CODIGO) nao tem acesso ao V9 Vision Prime. Fale com o administrador." ;;
     sem_chave) parar "Este Mac (codigo $CODIGO) esta liberado, mas sem direito a instalar. Fale com o administrador." ;;
     sem_rede) echo "      Nao consegui falar com o servidor de licencas. Confira a internet."; break ;;
     aguardando) ;;
@@ -158,7 +159,7 @@ else
   rm -f "$TMP/$ARQ"
   ok "programa instalado (versao $VERSAO)."
 fi
-[ -f "$DESTINO/abrir_mac.py" ] || parar "Esta versao do V9 Vision ainda nao tem a parte do Mac. Avise o administrador."
+[ -f "$DESTINO/abrir_mac.py" ] || parar "Esta versao do V9 Vision Prime ainda nao tem a parte do Mac. Avise o administrador."
 
 # ---------- 4) ffmpeg, bibliotecas, Remotion ----------
 azul 4 "Preparando ffmpeg, bibliotecas e Remotion (a parte mais demorada)"
@@ -235,7 +236,7 @@ else
   [ "$PROVEDOR" = "gpt" ] && OPENAI="$(segredo '      Chave da OpenAI (platform.openai.com/api-keys): ')"
   SEGREDO_FLASK="$(openssl rand -hex 24)"
   {
-    echo "# Configuracao do V9 Vision neste Mac. Nao envie este arquivo para ninguem."
+    echo "# Configuracao do V9 Vision Prime neste Mac. Nao envie este arquivo para ninguem."
     echo "# Nunca coloque ANTHROPIC_API_KEY aqui se voce usa a assinatura do Claude: passaria a cobrar da API paga."
     echo "SENHA=$SENHA_APP"
     echo "PROJETOS_DIR=$PROJ"
@@ -285,7 +286,7 @@ azul 7 "Conferindo o CapCut"
 if [ -d "/Applications/CapCut.app" ] || [ -d "$HOME/Applications/CapCut.app" ]; then ok "CapCut instalado."
 else aviso "Nao achei o CapCut. Instale pela App Store ou em capcut.com e abra uma vez antes de gerar o primeiro video."; fi
 
-# ---------- 8) app no Launchpad + V9 Flow ----------
+# ---------- 8) app no Launchpad + V9 Ultra Flow ----------
 
 # 18/10 (dono: "nenhum com o ícone"): no macOS novo o app do osacompile traz um Assets.car que manda no ícone; trocar só o
 # applet.icns não aparece. Apaga o Assets.car, aponta o Info.plist para o applet.icns, reassina e avisa o Launchpad.
@@ -295,6 +296,10 @@ icone_no_app() {
   /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$a/Contents/Info.plist" >/dev/null 2>&1 || true
   /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile applet" "$a/Contents/Info.plist" >/dev/null 2>&1 \
     || /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string applet" "$a/Contents/Info.plist" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c "Set :CFBundleName \"$NOME_VISIVEL\"" "$a/Contents/Info.plist" >/dev/null 2>&1 \
+    || /usr/libexec/PlistBuddy -c "Add :CFBundleName string \"$NOME_VISIVEL\"" "$a/Contents/Info.plist" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName \"$NOME_VISIVEL\"" "$a/Contents/Info.plist" >/dev/null 2>&1 \
+    || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string \"$NOME_VISIVEL\"" "$a/Contents/Info.plist" >/dev/null 2>&1 || true
   codesign --force --sign - "$a" >/dev/null 2>&1 && codesign --verify "$a" >/dev/null 2>&1 || aviso "O app $(basename "$a") pode nao abrir: a assinatura falhou. Rode este instalador de novo."
   touch "$a"
   /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$a" >/dev/null 2>&1 || true
@@ -320,25 +325,25 @@ touch "$APP"
 ok "\"$NOME\" em Aplicativos do usuario (~/Applications) -- aparece no Launchpad e no Spotlight."
 printf '%s\n' "$LOGIN" > "$DESTINO/instalado_para.txt"
 
-# V9 Flow (incluso no Vision): igual ao Passo 10 do instalar.tpl.bat -- baixa o instalador Mac do Flow e roda aqui mesmo,
+# V9 Ultra Flow (incluso no Vision): igual ao Passo 10 do instalar.tpl.bat -- baixa o instalador Mac do Flow e roda aqui mesmo,
 # encadeado (V9F_ENCADEADO + V9F_E_*): login, senha e termo vao daqui e ele nao pergunta de novo. A lista do Flow
 # (membros.json da distribuicao dele) continua sendo a palavra final. Nunca bloqueia: falhou = aviso + linha manual.
 LINHA_FLOW="curl -fsSL $FLOW_URL/instalar_mac.sh | bash"
 flow_encadeado() {
   # $1 = modo (login|codigo). Codigos do instalador do Flow: 0 ok, 3 ainda nao liberado, outro = falhou
   local cod
-  echo "      Instalando o V9 Flow neste Mac (mais alguns minutos)..."
+  echo "      Instalando o V9 Ultra Flow neste Mac (mais alguns minutos)..."
   V9F_ENCADEADO=1 V9F_E_modo="$1" V9F_E_termo=ACEITO V9F_BASE_URL="$FLOW_URL"     V9F_E_login="$LOGIN" V9F_E_senha="$SENHA_FLOW" /bin/bash "$TMP/Instalar-V9Flow.sh"
   cod=$?
-  if [ $cod -eq 0 ]; then ok "V9 Flow instalado: app \"V9 Flow\" no Launchpad."
-  elif [ $cod -eq 3 ]; then ok "o V9 Flow ainda nao foi liberado para este Mac. Quando for, e so' rodar este instalador de novo."
-  else aviso "O V9 Flow nao terminou de instalar (veja a mensagem acima). Nao afeta o V9 Vision. Para tentar de novo, cole no Terminal: $LINHA_FLOW"; fi
+  if [ $cod -eq 0 ]; then ok "V9 Ultra Flow instalado: app \"V9 Ultra Flow\" no Launchpad."
+  elif [ $cod -eq 3 ]; then ok "o V9 Ultra Flow ainda nao foi liberado para este Mac. Quando for, e so' rodar este instalador de novo."
+  else aviso "O V9 Ultra Flow nao terminou de instalar (veja a mensagem acima). Nao afeta o V9 Vision Prime. Para tentar de novo, cole no Terminal: $LINHA_FLOW"; fi
 }
-if [ -d "$HOME/Applications/V9 Flow.app" ]; then ok "V9 Flow ja instalado (ele se atualiza sozinho)."
+if [ -d "$HOME/Applications/V9 Flow.app" ]; then ok "V9 Ultra Flow ja instalado (ele se atualiza sozinho)."
 elif [ "$MODO" != "codigo" ] && [ -z "$SENHA_FLOW" ]; then
-  aviso "Nao deu para instalar o V9 Flow agora. Para instalar, cole no Terminal: $LINHA_FLOW"
+  aviso "Nao deu para instalar o V9 Ultra Flow agora. Para instalar, cole no Terminal: $LINHA_FLOW"
 elif ! curl -fsSL "$FLOW_URL/instalar_mac.sh" -o "$TMP/Instalar-V9Flow.sh" 2>/dev/null; then
-  aviso "Nao consegui baixar o instalador do V9 Flow agora. Para instalar depois, cole no Terminal: $LINHA_FLOW"
+  aviso "Nao consegui baixar o instalador do V9 Ultra Flow agora. Para instalar depois, cole no Terminal: $LINHA_FLOW"
 elif [ "$MODO" = "codigo" ]; then
   # por codigo, quem decide e' o servidor de licencas (o mesmo Mac liberado; Joshua barrado la): o instalador do Flow
   # confere o mesmo codigo e, se ainda nao foi liberado, sai com 3 sem esperar
@@ -349,10 +354,10 @@ elif curl -fsSL "$FLOW_URL/membros.json" -o "$TMP/flow_membros.json" 2>/dev/null
   if "$VPY" -c 'import json,sys; sys.exit(0 if sys.argv[2] in json.load(open(sys.argv[1]))["membros"] else 1)' "$TMP/flow_membros.json" "$ID_LOGIN"; then
     flow_encadeado login
   else
-    ok "o V9 Flow sera liberado para sua conta em breve. Quando for, e so' rodar este instalador de novo."
+    ok "o V9 Ultra Flow sera liberado para sua conta em breve. Quando for, e so' rodar este instalador de novo."
   fi
 else
-  aviso "Nao consegui conferir a lista do V9 Flow agora. Para instalar depois, cole no Terminal: $LINHA_FLOW"
+  aviso "Nao consegui conferir a lista do V9 Ultra Flow agora. Para instalar depois, cole no Terminal: $LINHA_FLOW"
 fi
 SENHA_FLOW=""
 
@@ -374,7 +379,7 @@ printf 'Termo de uso aceito\nlogin: %s\ndata: %s\ncomputador: %s\nversao do app:
 rm -rf "$TMP"
 if [ ${#AVISOS[@]} -eq 0 ]; then ok "tudo certo, nenhuma pendencia."; else echo "      Instalado, com pendencias:"; for a in "${AVISOS[@]}"; do echo "       - $a"; done; fi
 echo ""
-echo "  Para usar: abra \"$NOME\" pelo Launchpad ou Spotlight (Cmd+Espaco, digite V9 Vision)."
+echo "  Para usar: abra \"$NOME_VISIVEL\" pelo Launchpad ou Spotlight (Cmd+Espaco, digite V9 Vision Prime)."
 echo "  Para atualizar: o programa confere sozinho cada vez que abre (ou rode este comando de novo)."
 echo "  Para desinstalar: bash \"$DESTINO/desinstalar_mac.sh\""
 echo ""
